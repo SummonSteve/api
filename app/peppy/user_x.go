@@ -18,7 +18,7 @@ func GetUserRecent(c *fasthttp.RequestCtx, db *sqlx.DB) {
 
 // GetUserRXRecent retrieves an user's recent scores.
 func GetUserRXRecent(c *fasthttp.RequestCtx, db *sqlx.DB) {
-	getUserX(c, db, "ORDER BY scores_relax.time DESC", common.InString(1, query(c, "limit"), 50, 10))
+	getUserRXX(c, db, "ORDER BY scores_relax.time DESC", common.InString(1, query(c, "limit"), 50, 10))
 }
 
 // GetUserBest retrieves an user's best scores.
@@ -30,6 +30,73 @@ func GetUserBest(c *fasthttp.RequestCtx, db *sqlx.DB) {
 		sb = "scores.score"
 	}
 	getUserX(c, db, "AND completed = '3' ORDER BY "+sb+" DESC", common.InString(1, query(c, "limit"), 100, 10))
+}
+
+func getUserRXX(c *fasthttp.RequestCtx, db *sqlx.DB, orderBy string, limit int) {
+	whereClause, p := genUser(c, db)
+	sqlQuery := fmt.Sprintf(
+		`SELECT
+			beatmaps.beatmap_id, scores_relax.score, scores_relax.max_combo,
+			scores_relax.300_count, scores_relax.100_count, scores_relax.50_count,
+			scores_relax.gekis_count, scores_relax.katus_count, scores_relax.misses_count,
+			scores_relax.full_combo, scores_relax.mods, users.id, scores_relax.time,
+			scores_relax.pp, scores_relax.accuracy
+		FROM scores_relax
+		LEFT JOIN beatmaps ON beatmaps.beatmap_md5 = scores_relax.beatmap_md5
+		LEFT JOIN users ON scores_relax.userid = users.id
+		WHERE %s AND scores_relax.play_mode = ? AND users.privileges & 1 > 0
+		%s
+		LIMIT %d`, whereClause, orderBy, limit,
+	)
+	scores := make([]osuapi.GUSScore, 0, limit)
+	m := genmodei(query(c, "m"))
+	rows, err := db.Query(sqlQuery, p, m)
+	if err != nil {
+		json(c, 200, defaultResponse)
+		common.Err(c, err)
+		return
+	}
+	for rows.Next() {
+		var (
+			curscore osuapi.GUSScore
+			rawTime  common.UnixTimestamp
+			acc      float64
+			fc       bool
+			mods     int
+			bid      *int
+		)
+		err := rows.Scan(
+			&bid, &curscore.Score.Score, &curscore.MaxCombo,
+			&curscore.Count300, &curscore.Count100, &curscore.Count50,
+			&curscore.CountGeki, &curscore.CountKatu, &curscore.CountMiss,
+			&fc, &mods, &curscore.UserID, &rawTime,
+			&curscore.PP, &acc,
+		)
+		if err != nil {
+			json(c, 200, defaultResponse)
+			common.Err(c, err)
+			return
+		}
+		if bid == nil {
+			curscore.BeatmapID = 0
+		} else {
+			curscore.BeatmapID = *bid
+		}
+		curscore.FullCombo = osuapi.OsuBool(fc)
+		curscore.Mods = osuapi.Mods(mods)
+		curscore.Date = osuapi.MySQLDate(rawTime)
+		curscore.Rank = strings.ToUpper(getrank.GetRank(
+			osuapi.Mode(m),
+			curscore.Mods,
+			acc,
+			curscore.Count300,
+			curscore.Count100,
+			curscore.Count50,
+			curscore.CountMiss,
+		))
+		scores = append(scores, curscore)
+	}
+	json(c, 200, scores)
 }
 
 func getUserX(c *fasthttp.RequestCtx, db *sqlx.DB, orderBy string, limit int) {
