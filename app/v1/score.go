@@ -261,6 +261,10 @@ func genModeClause(md common.MethodData) string {
 	return genModeClauseColumn(md, "scores.play_mode")
 }
 
+func rxgenModeClause(md common.MethodData) string {
+	return genModeClauseColumn(md, "scores_relax.play_mode")
+}
+
 func genModeClauseColumn(md common.MethodData, column string) string {
 	var modeClause string
 	if md.Query("mode") != "" {

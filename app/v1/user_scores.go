@@ -87,7 +87,7 @@ func UserRXScoresBestGET(md common.MethodData) common.CodeMessager {
 	if cm != nil {
 		return *cm
 	}
-	mc := genModeClause(md)
+	mc := rxgenModeClause(md)
 	// For all modes that have PP, we leave out 0 PP scores.
 	if getMode(md.Query("mode")) != "ctb" {
 		mc += " AND scores_relax.pp > 0"
