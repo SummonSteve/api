@@ -92,7 +92,7 @@ func UserRXScoresBestGET(md common.MethodData) common.CodeMessager {
 	if getMode(md.Query("mode")) != "ctb" {
 		mc += " AND scores_relax.pp > 0"
 	}
-	return scoresPuts(md, fmt.Sprintf(
+	return rxscoresPuts(md, fmt.Sprintf(
 		`WHERE
 			scores_relax.completed = '3'
 			AND %s
@@ -117,6 +117,55 @@ func UserScoresRecentGET(md common.MethodData) common.CodeMessager {
 		ORDER BY scores.id DESC %s`,
 		wc, genModeClause(md), common.Paginate(md.Query("p"), md.Query("l"), 100),
 	), param)
+}
+
+func rxscoresPuts(md common.MethodData, whereClause string, params ...interface{}) common.CodeMessager {
+	rows, err := md.DB.Query(userRXScoreSelectBase+whereClause, params...)
+	if err != nil {
+		md.Err(err)
+		return Err500
+	}
+	var scores []userScore
+	for rows.Next() {
+		var (
+			us userScore
+			b  beatmap
+		)
+		err = rows.Scan(
+			&us.ID, &us.BeatmapMD5, &us.Score.Score,
+			&us.MaxCombo, &us.FullCombo, &us.Mods,
+			&us.Count300, &us.Count100, &us.Count50,
+			&us.CountGeki, &us.CountKatu, &us.CountMiss,
+			&us.Time, &us.PlayMode, &us.Accuracy, &us.PP,
+			&us.Completed,
+
+			&b.BeatmapID, &b.BeatmapsetID, &b.BeatmapMD5,
+			&b.SongName, &b.AR, &b.OD, &b.Diff2.STD,
+			&b.Diff2.Taiko, &b.Diff2.CTB, &b.Diff2.Mania,
+			&b.MaxCombo, &b.HitLength, &b.Ranked,
+			&b.RankedStatusFrozen, &b.LatestUpdate,
+		)
+		if err != nil {
+			md.Err(err)
+			return Err500
+		}
+		b.Difficulty = b.Diff2.STD
+		us.Beatmap = b
+		us.Rank = strings.ToUpper(getrank.GetRank(
+			osuapi.Mode(us.PlayMode),
+			osuapi.Mods(us.Mods),
+			us.Accuracy,
+			us.Count300,
+			us.Count100,
+			us.Count50,
+			us.CountMiss,
+		))
+		scores = append(scores, us)
+	}
+	r := userScoresResponse{}
+	r.Code = 200
+	r.Scores = scores
+	return r
 }
 
 func scoresPuts(md common.MethodData, whereClause string, params ...interface{}) common.CodeMessager {
