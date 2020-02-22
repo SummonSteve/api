@@ -119,6 +119,21 @@ func UserScoresRecentGET(md common.MethodData) common.CodeMessager {
 	), param)
 }
 
+func UserRXScoresRecentGET(md common.MethodData) common.CodeMessager {
+	cm, wc, param := whereClauseUser(md, "users")
+	if cm != nil {
+		return *cm
+	}
+	return rxscoresPuts(md, fmt.Sprintf(
+		`WHERE
+			%s
+			%s
+			AND `+md.User.OnlyUserPublic(true)+`
+		ORDER BY scores_relax.id DESC %s`,
+		wc, rxgenModeClause(md), common.Paginate(md.Query("p"), md.Query("l"), 100),
+	), param)
+}
+
 func rxscoresPuts(md common.MethodData, whereClause string, params ...interface{}) common.CodeMessager {
 	rows, err := md.DB.Query(userRXScoreSelectBase+whereClause, params...)
 	if err != nil {

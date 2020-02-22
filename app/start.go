@@ -99,6 +99,7 @@ func Start(conf common.Conf, dbO *sqlx.DB) *fhr.Router {
 		r.Method("/api/v1/users/scores/best", v1.UserScoresBestGET)
 		r.Method("/api/v1/users/scores/rxbest", v1.UserRXScoresBestGET)
 		r.Method("/api/v1/users/scores/recent", v1.UserScoresRecentGET)
+		r.Method("/api/v1/users/scores/rxrecent", v1.UserRXScoresRecentGET)
 		r.Method("/api/v1/badges", v1.BadgesGET)
 		r.Method("/api/v1/badges/members", v1.BadgeMembersGET)
 		r.Method("/api/v1/beatmaps", v1.BeatmapGET)
