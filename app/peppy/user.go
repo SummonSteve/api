@@ -62,3 +62,48 @@ func GetUser(c *fasthttp.RequestCtx, db *sqlx.DB) {
 
 	json(c, 200, []osuapi.User{user})
 }
+
+
+// GetUser retrieves general user information.
+func GetRXUser(c *fasthttp.RequestCtx, db *sqlx.DB) {
+	if query(c, "u") == "" {
+		json(c, 200, defaultResponse)
+		return
+	}
+	var user osuapi.User
+	whereClause, p := genUser(c, db)
+	whereClause = "WHERE " + whereClause
+
+	mode := genmode(query(c, "m"))
+
+	err := db.QueryRow(fmt.Sprintf(
+		`SELECT
+			users.id, users.username,
+			rx_stats.playcount_%s, rx_stats.ranked_score_%s, rx_stats.total_score_%s,
+			rx_stats.pp_%s, rx_stats.avg_accuracy_%s,
+			rx_stats.country
+		FROM users
+		LEFT JOIN rx_stats ON rx_stats.id = users.id
+		%s
+		LIMIT 1`,
+		mode, mode, mode, mode, mode, whereClause,
+	), p).Scan(
+		&user.UserID, &user.Username,
+		&user.Playcount, &user.RankedScore, &user.TotalScore,
+		&user.PP, &user.Accuracy,
+		&user.Country,
+	)
+	if err != nil {
+		json(c, 200, defaultResponse)
+		if err != sql.ErrNoRows {
+			common.Err(c, err)
+		}
+		return
+	}
+
+	user.Rank = int(R.ZRevRank("ripple:relaxboard:"+mode, strconv.Itoa(user.UserID)).Val()) + 1
+	user.CountryRank = int(R.ZRevRank("ripple:relaxboard:"+mode+":"+strings.ToLower(user.Country), strconv.Itoa(user.UserID)).Val()) + 1
+	user.Level = ocl.GetLevelPrecise(user.TotalScore)
+
+	json(c, 200, []osuapi.User{user})
+}

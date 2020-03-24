@@ -74,6 +74,7 @@ func Start(conf common.Conf, dbO *sqlx.DB) *fhr.Router {
 	// peppyapi
 	{
 		r.Peppy("/api/get_user", peppy.GetUser)
+		r.Peppy("/api/get_rxuser", peppy.GetRXUser)
 		r.Peppy("/api/get_match", peppy.GetMatch)
 		r.Peppy("/api/get_user_recent", peppy.GetUserRecent)
 		r.Peppy("/api/get_user_rxrecent", peppy.GetUserRXRecent)
