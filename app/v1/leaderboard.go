@@ -107,8 +107,16 @@ func leaderboardPosition(r *redis.Client, mode string, user int) *int {
 	return _position(r, "ripple:leaderboard:"+mode, user)
 }
 
+func rxleaderboardPosition(r *redis.Client, mode string, user int) *int {
+	return _position(r, "ripple:relaxboard:"+mode, user)
+}
+
 func countryPosition(r *redis.Client, mode string, user int, country string) *int {
 	return _position(r, "ripple:leaderboard:"+mode+":"+strings.ToLower(country), user)
+}
+
+func rxcountryPosition(r *redis.Client, mode string, user int, country string) *int {
+	return _position(r, "ripple:relaxboard:"+mode+":"+strings.ToLower(country), user)
 }
 
 func _position(r *redis.Client, key string, user int) *int {

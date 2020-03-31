@@ -425,10 +425,10 @@ LIMIT 1
 	for modeID, m := range [...]*modeData{&r.STD, &r.Taiko, &r.CTB, &r.Mania} {
 		m.Level = ocl.GetLevelPrecise(int64(m.TotalScore))
 
-		if i := leaderboardPosition(md.R, modesToReadable[modeID], r.ID); i != nil {
+		if i := rxleaderboardPosition(md.R, modesToReadable[modeID], r.ID); i != nil {
 			m.GlobalLeaderboardRank = i
 		}
-		if i := countryPosition(md.R, modesToReadable[modeID], r.ID, r.Country); i != nil {
+		if i := rxcountryPosition(md.R, modesToReadable[modeID], r.ID, r.Country); i != nil {
 			m.CountryLeaderboardRank = i
 		}
 	}
