@@ -352,19 +352,19 @@ SELECT
 
 	rx_stats.ranked_score_std, rx_stats.total_score_std, rx_stats.playcount_std,
 	rx_stats.replays_watched_std, rx_stats.total_hits_std,
-	rx_stats.avg_accuracy_std, rx_stats.pp_std, rx_stats.playtime_std,
+	rx_stats.avg_accuracy_std, rx_stats.pp_std, users_stats.playtime_std,
 
 	rx_stats.ranked_score_taiko, rx_stats.total_score_taiko, rx_stats.playcount_taiko,
 	rx_stats.replays_watched_taiko, rx_stats.total_hits_taiko,
-	rx_stats.avg_accuracy_taiko, rx_stats.pp_taiko, rx_stats.playtime_taiko,
+	rx_stats.avg_accuracy_taiko, rx_stats.pp_taiko, users_stats.playtime_taiko,
 
 	rx_stats.ranked_score_ctb, rx_stats.total_score_ctb, rx_stats.playcount_ctb,
 	rx_stats.replays_watched_ctb, rx_stats.total_hits_ctb,
-	rx_stats.avg_accuracy_ctb, rx_stats.pp_ctb, rx_stats.playtime_ctb,
+	rx_stats.avg_accuracy_ctb, rx_stats.pp_ctb, users_stats.playtime_ctb,
 
 	rx_stats.ranked_score_mania, rx_stats.total_score_mania, rx_stats.playcount_mania,
 	rx_stats.replays_watched_mania, rx_stats.total_hits_mania,
-	rx_stats.avg_accuracy_mania, rx_stats.pp_mania, rx_stats.playtime_mania,
+	rx_stats.avg_accuracy_mania, rx_stats.pp_mania, users_stats.playtime_mania,
 
 	users.silence_reason, users.silence_end,
 	users.notes, users.ban_datetime, users.email
@@ -372,6 +372,8 @@ SELECT
 FROM users
 LEFT JOIN rx_stats
 ON users.id=rx_stats.id
+LEFT JOIN users_stats
+ON rx_stats.id=users_stats.id
 WHERE ` + whereClause + ` AND ` + md.User.OnlyUserPublic(true) + `
 LIMIT 1
 `
