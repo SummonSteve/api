@@ -103,6 +103,27 @@ func UserRXScoresBestGET(md common.MethodData) common.CodeMessager {
 	), param)
 }
 
+func UserRXScoresBestAllGET(md common.MethodData) common.CodeMessager {
+	cm, wc, param := whereClauseUser(md, "users")
+	if cm != nil {
+		return *cm
+	}
+	mc := rxgenModeClause(md)
+	// For all modes that have PP, we leave out 0 PP scores.
+	if getMode(md.Query("mode")) != "ctb" {
+		mc += " AND scores_relax.pp > 0"
+	}
+	return rxscoresPuts(md, fmt.Sprintf(
+		`WHERE
+			scores_relax.completed = '3'
+			AND %s
+			%s
+			AND `+md.User.OnlyUserPublic(true)+`
+		ORDER BY scores_relax.pp DESC, scores_relax.score DESC`,
+		wc, mc,
+	), param)
+}
+
 // UserScoresRecentGET retrieves an user's latest scores.
 func UserScoresRecentGET(md common.MethodData) common.CodeMessager {
 	cm, wc, param := whereClauseUser(md, "users")
