@@ -80,6 +80,27 @@ func UserScoresBestGET(md common.MethodData) common.CodeMessager {
 	), param)
 }
 
+func UserScoresBestAllGET(md common.MethodData) common.CodeMessager {
+	cm, wc, param := whereClauseUser(md, "users")
+	if cm != nil {
+		return *cm
+	}
+	mc := genModeClause(md)
+	// For all modes that have PP, we leave out 0 PP scores.
+	if getMode(md.Query("mode")) != "ctb" {
+		mc += " AND scores.pp > 0"
+	}
+	return scoresPuts(md, fmt.Sprintf(
+		`WHERE
+			scores.completed = '3'
+			AND %s
+			%s
+			AND `+md.User.OnlyUserPublic(true)+`
+		ORDER BY scores.pp DESC, scores.score DESC`,
+		wc, mc,
+	), param)
+}
+
 // UserRXScoresBestGET retrieves the best scores of an user, sorted by PP if
 // mode is standard and sorted by ranked score otherwise.
 func UserRXScoresBestGET(md common.MethodData) common.CodeMessager {
